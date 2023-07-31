@@ -18,7 +18,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>
-      <Script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js" />
     </html>
   )
 }

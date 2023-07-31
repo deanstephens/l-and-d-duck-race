@@ -1,1 +1,0 @@
-declare var Peer: any;   // Writing variable type

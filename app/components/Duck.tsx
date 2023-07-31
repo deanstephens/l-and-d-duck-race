@@ -1,3 +1,5 @@
+"use client";
+
 export type DuckProps = {
     x: number
     name: string
