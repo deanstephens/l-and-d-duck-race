@@ -1,6 +1,6 @@
 "use client";
 
-import {Tabs, Card, Checkbox, Label, Modal, TextInput, Button} from "flowbite-react";
+import {Tabs, Card, Label, TextInput, Button} from "flowbite-react";
 import {useState} from "react";
 
 export type ServerClientSelectionProps = {

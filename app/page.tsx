@@ -1,13 +1,13 @@
 "use client";
 import {useEffect, useRef, useState} from "react";
-import {Duck, DuckProps, duckWidth} from "@/app/components/Duck";
-import Peer, {DataConnection} from "peerjs";
+import {Duck, DuckProps} from "@/app/components/Duck";
 import 'flowbite';
 import {ServerClientSelection} from "@/app/components/ServerClientSelection";
+import {MyDataConnection, MyPeer} from "@/app/types/Peer";
 
 type connection = {
     [key: string]: {
-        conn: DataConnection
+        conn: MyDataConnection
         name: string
     }
 }
@@ -28,13 +28,16 @@ type updateDucksMessage = {
 export default function Home() {
     const [connectionType, setConnectionType] = useState<"server" | "client" | null>(null);
     const [connections, setConnections] = useState<connection>({});
-    const [peer, setPeer] = useState<Peer>(() => {
-        const peer = new Peer();
-        peer.on('open', function (id: string) {
-            console.log('My peer ID is: ' + id);
+    useEffect(() => {
+        import("peerjs").then(({ default: Peer }) => {
+            const peer = new Peer();
+            peer.on('open', function (id: string) {
+                console.log('My peer ID is: ' + id);
+            });
+            setPeer(peer);
         });
-        return peer;
-    });
+    }, []);
+    const [peer, setPeer] = useState<MyPeer>();
 
     const [serverPeerId, setServerPeerId] = useState<string>("");
     const [ducks, setDucks] = useState<DuckProps[]>([]);
@@ -115,6 +118,9 @@ export default function Home() {
     }
 
     const connectToServer = (duckName:string, serverId: string) => {
+        if(!peer){
+            return;
+        }
         setConnectionType("client");
 
         const conn = peer.connect(serverId);
@@ -150,6 +156,10 @@ export default function Home() {
     }
 
     const startServer = (duckName: string) => {
+        if(!peer){
+            return;
+        }
+
         addDuck(duckName);
         setConnectionType("server");
 
