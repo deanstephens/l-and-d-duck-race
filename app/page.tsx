@@ -4,11 +4,13 @@ import {Duck, DuckProps} from "@/app/components/Duck";
 import 'flowbite';
 import {ServerClientSelection} from "@/app/components/ServerClientSelection";
 import {MyDataConnection, MyPeer} from "@/app/types/Peer";
+import {Button, Card, Label, TextInput} from "flowbite-react";
 
 type connection = {
     [key: string]: {
         conn: MyDataConnection
         name: string
+        peerId: string
     }
 }
 
@@ -25,11 +27,22 @@ type updateDucksMessage = {
     data: DuckProps[]
 }
 
+type sendChatMessage = {
+    type: "chatMessage",
+    data: chatMessage
+}
+
+type chatMessage = {
+    senderId: string,
+    senderName: string,
+    message: string
+}
+
 export default function Home() {
     const [connectionType, setConnectionType] = useState<"server" | "client" | null>(null);
     const [connections, setConnections] = useState<connection>({});
     useEffect(() => {
-        import("peerjs").then(({ default: Peer }) => {
+        import("peerjs").then(({default: Peer}) => {
             const peer = new Peer();
             peer.on('open', function (id: string) {
                 console.log('My peer ID is: ' + id);
@@ -38,6 +51,11 @@ export default function Home() {
         });
     }, []);
     const [peer, setPeer] = useState<MyPeer>();
+    const [chatMessages, setChatMessages] = useState<chatMessage[]>([]);
+
+    const [chatMessage, setChatMessage] = useState<string>("");
+
+    const [duckName, setDuckName] = useState<string>("");
 
     const [serverPeerId, setServerPeerId] = useState<string>("");
     const [ducks, setDucks] = useState<DuckProps[]>([]);
@@ -104,6 +122,39 @@ export default function Home() {
         });
     }
 
+    const sendChatMessage = () => {
+        if (!peer || chatMessage == "") {
+            return;
+        }
+        setChatMessages((chatMessages) => {
+           return [...chatMessages, {senderId: peer.id, senderName: duckName, message: chatMessage}]
+        });
+
+        updateConnectionsChatMessages(peer.id, duckName, chatMessage)
+
+        setChatMessage("");
+    }
+
+    const updateConnectionsChatMessages = (senderId: string, senderName: string, message: string) => {
+        Object.keys(connections).forEach((connId) => {
+            if(connections[connId].peerId === senderId) {
+                return;
+            }
+            const conn = connections[connId].conn;
+            const chatMessage = {
+                type: "chatMessage",
+                data: {
+                    senderId: senderId,
+                    senderName: senderName,
+                    message: message
+                }
+            };
+
+            console.log("sending message", chatMessage, connections[connId].peerId)
+            conn.send(chatMessage);
+        });
+    }
+
     const updateClientsDucks = (ducks: DuckProps[]) => {
         const message: updateDucksMessage = {
             type: "updateDucks",
@@ -117,11 +168,12 @@ export default function Home() {
         });
     }
 
-    const connectToServer = (duckName:string, serverId: string) => {
-        if(!peer){
+    const connectToServer = (duckName: string, serverId: string) => {
+        if (!peer) {
             return;
         }
         setConnectionType("client");
+        setDuckName(duckName);
 
         const conn = peer.connect(serverId);
 
@@ -136,10 +188,18 @@ export default function Home() {
                     name: duckName
                 }
             });
+            setConnections((connections) => {
+                connections[serverId] = {
+                    conn: conn,
+                    peerId: serverId,
+                    name: "server"
+                };
+                return connections
+            });
         });
 
         peer.on('connection', function (conn: any) {
-            conn.on('data', function (data: updateDucksMessage|connectionMessage) {
+            conn.on('data', function (data: updateDucksMessage | connectionMessage | sendChatMessage) {
                 if (data.type === "updateDucks") {
                     const ducks = data.data;
                     setDucks(data.data);
@@ -147,6 +207,14 @@ export default function Home() {
                     if (winner) {
                         setWinner(winner);
                     }
+                }
+                if (data.type === "chatMessage") {
+                    console.log("received chat message", data.data)
+                    setChatMessages((chatMessages) => {
+                        const newChatMessages = [...chatMessages, data.data];
+                        console.log(newChatMessages);
+                        return newChatMessages
+                    });
                 }
                 if (data.type === "connect") {
                     console.log("server connection established")
@@ -156,15 +224,16 @@ export default function Home() {
     }
 
     const startServer = (duckName: string) => {
-        if(!peer){
+        if (!peer) {
             return;
         }
 
         addDuck(duckName);
+        setDuckName(duckName);
         setConnectionType("server");
 
         peer.on('connection', function (conn: any) {
-            conn.on('data', function (data: connectionMessage) {
+            conn.on('data', function (data: connectionMessage | sendChatMessage) {
                 if (data.type === "connect") {
                     const connection = data.data;
                     const conn = peer.connect(connection.peerId);
@@ -185,11 +254,21 @@ export default function Home() {
                     setConnections((connections) => {
                         connections[connection.peerId] = {
                             conn: conn,
+                            peerId: connection.peerId,
                             name: connection.name
                         };
                         return connections
                     });
                     addDuck(connection.name);
+                }
+                if (data.type === "chatMessage") {
+                    console.log("received chat message", data.data);
+                    setChatMessages((chatMessages) => {
+                        const newChatMessages = [...chatMessages, data.data];
+                        console.log(newChatMessages);
+                        return newChatMessages
+                    });
+                    updateConnectionsChatMessages(data.data.senderId, data.data.senderName, data.data.message)
                 }
             });
         });
@@ -202,16 +281,19 @@ export default function Home() {
 
     return (
         <div>
-            {connectionType === "server" && (<div className="grid grid-cols-4 gap-4">
-                <button onClick={startRace}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Start
-                    Race
-                </button>
-                <button onClick={resetRace}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Reset
-                    Race
-                </button>
-            </div>)}
+            {connectionType === "server" && (
+                <div className="grid grid-cols-4 gap-4">
+                    <button onClick={startRace}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Start
+                        Race
+                    </button>
+                    <button onClick={resetRace}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Reset
+                        Race
+                    </button>
+                </div>
+            )}
+
             {ducks.map((duck, i) => (
                 <Duck key={i} {...duck} />
             ))}
@@ -231,6 +313,29 @@ export default function Home() {
                 className="h-20 w-20 bg-red-600 right-0 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 The winner is {winner.name}
             </div>) : null}
+
+            <Card
+                className="max-w-sm"
+            >
+                <div className="h-80">
+                    {chatMessages.map((message, i) => (
+                        <div key={i} className="text-black">
+                            {message.senderName}: {message.message}
+                        </div>
+                    ))}
+                </div>
+                <div className="flex max-w-md flex-row gap-4">
+                    <TextInput
+                        id="chatInput"
+                        required
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                    />
+                    <Button onClick={sendChatMessage}>
+                        Submit
+                    </Button>
+                </div>
+            </Card>
         </div>
     )
 }
