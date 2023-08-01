@@ -319,7 +319,7 @@ export default function Home() {
             <Card
                 className="max-w-sm"
             >
-                <div className="h-80">
+                <div className="h-80 overflow-y-scroll">
                     {chatMessages.map((message, i) => (
                         <div key={i} className="text-black">
                             {message.senderName}: {message.message}
