@@ -65,9 +65,9 @@ export default function Home() {
 
     const timer = useRef<NodeJS.Timeout | null>(null);
 
-    const addDuck = (duckName: string) => {
+    const addDuck = (duckName: string, imageUrl?: string) => {
         setDucks((ducks) => {
-            const newDucks = [...ducks, {x: 0, name: duckName}];
+            const newDucks = [...ducks, {x: 0, name: duckName, imageUrl: imageUrl}];
             updateClientsDucks(newDucks)
             return newDucks
         });
@@ -168,8 +168,8 @@ export default function Home() {
         });
     }
 
-    const connectToServer = (duckName: string, serverId: string) => {
-        if (!peer) {
+    const connectToServer = (duckName: string, serverId: string, imageUrl?: string) => {
+        if (!peer || duckName == "" || serverId == "") {
             return;
         }
         setConnectionType("client");
@@ -185,7 +185,8 @@ export default function Home() {
                 type: "connect",
                 data: {
                     peerId: peer.id,
-                    name: duckName
+                    name: duckName,
+                    imageUrl: imageUrl
                 }
             });
             setConnections((connections) => {
@@ -223,12 +224,12 @@ export default function Home() {
         });
     }
 
-    const startServer = (duckName: string) => {
-        if (!peer) {
+    const startServer = (duckName: string, imageUrl?: string) => {
+        if (!peer || duckName == "") {
             return;
         }
 
-        addDuck(duckName);
+        addDuck(duckName, imageUrl);
         setDuckName(duckName);
         setConnectionType("server");
 
@@ -246,6 +247,7 @@ export default function Home() {
                             type: "connect",
                             data: {
                                 peerId: peer.id,
+                                imageUrl: imageUrl,
                                 name: duckName
                             }
                         });
@@ -259,7 +261,7 @@ export default function Home() {
                         };
                         return connections
                     });
-                    addDuck(connection.name);
+                    addDuck(connection.name, imageUrl);
                 }
                 if (data.type === "chatMessage") {
                     console.log("received chat message", data.data);

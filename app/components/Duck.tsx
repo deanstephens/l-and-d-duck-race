@@ -3,11 +3,12 @@
 export type DuckProps = {
     x: number
     name: string
+    imageUrl?: string
 }
 
 export const duckWidth = 100;
 
-export const Duck = ({x, name}: DuckProps) => {
+export const Duck = ({x, name, imageUrl}: DuckProps) => {
     return (<div style={{
         left: x,
         position: "relative",
@@ -23,7 +24,9 @@ export const Duck = ({x, name}: DuckProps) => {
             width: `${duckWidth}px`,
             border: "1px solid white",
 
-        }}></div>
+        }}>
+            <img className="aspect-square" src={imageUrl}></img>
+        </div>
         <span>{name}</span>
     </div>)
 }

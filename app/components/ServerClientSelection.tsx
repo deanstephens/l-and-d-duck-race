@@ -4,12 +4,13 @@ import {Tabs, Card, Label, TextInput, Button} from "flowbite-react";
 import {useState} from "react";
 
 export type ServerClientSelectionProps = {
-    onClientConnect: (duckName:string, serverId: string) => void,
-    onServerStart: (duckName: string) => void
+    onClientConnect: (duckName:string, serverId: string, imageUrl?: string) => void,
+    onServerStart: (duckName: string, imageUrl?: string) => void
 }
 
 export const ServerClientSelection = ({ onClientConnect, onServerStart }: ServerClientSelectionProps) => {
     const [duckName, setDuckName] = useState<string>("");
+    const [imageUrl, setImageUrl] = useState<string>("");
     const [serverId, setServerId] = useState<string>("");
 
     return (
@@ -26,6 +27,20 @@ export const ServerClientSelection = ({ onClientConnect, onServerStart }: Server
                     placeholder=""
                     value={duckName}
                     onChange={(e) => setDuckName(e.target.value)}
+                />
+            </div>
+            <div>
+                <div className="mb-2 block">
+                    <Label
+                        htmlFor={`imageUrl`}
+                        value="Image Url"
+                    />
+                </div>
+                <TextInput
+                    id={`imageUrl`}
+                    placeholder=""
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
                 />
             </div>
 
@@ -51,13 +66,13 @@ export const ServerClientSelection = ({ onClientConnect, onServerStart }: Server
                                 onChange={(e) => setServerId(e.target.value)}
                             />
                         </div>
-                        <Button onClick={() => onClientConnect(duckName, serverId)}>Connect</Button>
+                        <Button onClick={() => onClientConnect(duckName, serverId, imageUrl)}>Connect</Button>
                     </div>
                 </Tabs.Item>
                 <Tabs.Item
                     active
                     title="Start server"
-                ><Button onClick={() => onServerStart(duckName)}>Connect</Button></Tabs.Item>
+                ><Button onClick={() => onServerStart(duckName, imageUrl)}>Connect</Button></Tabs.Item>
             </Tabs.Group>
         </Card>
     )
