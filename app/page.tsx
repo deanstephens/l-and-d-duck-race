@@ -19,6 +19,7 @@ type connectionMessage = {
     data: {
         peerId: string
         name: string
+        imageUrl: string
     }
 }
 
@@ -193,7 +194,7 @@ export default function Home() {
                 connections[serverId] = {
                     conn: conn,
                     peerId: serverId,
-                    name: "server"
+                    name: "server",
                 };
                 return connections
             });
@@ -248,7 +249,7 @@ export default function Home() {
                             data: {
                                 peerId: peer.id,
                                 imageUrl: imageUrl,
-                                name: duckName
+                                name: duckName,
                             }
                         });
                     });
@@ -257,11 +258,11 @@ export default function Home() {
                         connections[connection.peerId] = {
                             conn: conn,
                             peerId: connection.peerId,
-                            name: connection.name
+                            name: connection.name,
                         };
                         return connections
                     });
-                    addDuck(connection.name, imageUrl);
+                    addDuck(connection.name, connection.imageUrl);
                 }
                 if (data.type === "chatMessage") {
                     console.log("received chat message", data.data);
