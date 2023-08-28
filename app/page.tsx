@@ -77,7 +77,7 @@ export default function Home() {
 
     const checkForWinner = (ducks: DuckProps[]) => {
         const maxDuck = ducks.reduce((max, duck) => {
-            return Math.max(max.x, duck.x) ? max : duck;
+            return max.x > duck.x ? max : duck;
         });
 
         return maxDuck.x >= distanceRequired ? maxDuck : null;
